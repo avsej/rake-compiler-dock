@@ -111,7 +111,8 @@ USER root
 # Add more libraries and tools to support cross build
 RUN dpkg --add-architecture i386 && \
     apt-get -y update && \
-    apt-get install -y libc6-dev:i386 libudev-dev libudev-dev:i386 cmake
+    apt-get install -y libc6-dev:i386 libudev-dev libudev-dev:i386 cmake \
+                       libcurl4-openssl-dev libev-dev libevent-dev
 
 # Fix paths in rake-compiler/config.yml and add rvm and mingw-tools to the global bashrc
 RUN sed -i -- "s:/root/.rake-compiler:/usr/local/rake-compiler:g" /usr/local/rake-compiler/config.yml && \
