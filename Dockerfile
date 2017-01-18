@@ -57,6 +57,11 @@ RUN cd /usr/local/rvm/gems/ruby-2.4.0/gems/rake-compiler-1.0.3 && git apply /hom
 
 # Build cross ruby versions
 RUN bash -c " \
+    ( \
+      rake-compiler $HOME/.rake-compiler/sources/ruby-2.0.0-p645 VERSION=2.0.0-p645 HOST=i686-w64-mingw32 && \
+      cd $HOME/.rake-compiler/sources/ruby-2.0.0-p645 && \
+      git apply /home/rvm/patches/ruby-2.0.0-p645/* \
+    ); \
     export CFLAGS='-s -O1 -fno-omit-frame-pointer -fno-fast-math' && \
     parallel -- \
       'rake-compiler cross-ruby VERSION=2.4.0 HOST=i686-linux-gnu' \

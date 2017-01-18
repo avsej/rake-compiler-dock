@@ -1,0 +1,72 @@
+commit 3d7fa44b05482818a954e04dfb6e5311e1b790b8
+Author: nobu <nobu@b2dd03c8-39d4-4d8f-98ff-823fe69b080e>
+Date:   Mon Jul 8 14:13:13 2013 +0000
+
+    win32.c: for strict ANSI
+    
+    * win32/win32.c (rb_w32_pow): move from win32.h and disable strict
+      ANSI mode macro to let _controlfp() stuff defined.
+      [ruby-core:55312] [Bug #8495]
+    
+    git-svn-id: svn+ssh://ci.ruby-lang.org/ruby/trunk@41836 b2dd03c8-39d4-4d8f-98ff-823fe69b080e
+
+diff -Nru ruby-2.0.0-p645.orig/include/ruby/win32.h ruby-2.0.0-p645/include/ruby/win32.h
+--- ruby-2.0.0-p645.orig/include/ruby/win32.h	2013-11-11 17:29:58.000000000 +0400
++++ ruby-2.0.0-p645/include/ruby/win32.h	2017-01-18 12:12:32.965390448 +0300
+@@ -790,21 +790,7 @@
+     return powl(x, y);
+ }
+ #elif defined(__MINGW64_VERSION_MAJOR)
+-/*
+- * Set floating point precision for pow() of mingw-w64 x86.
+- * With default precision the result is not proper on WinXP.
+- */
+-static inline double
+-rb_w32_pow(double x, double y)
+-{
+-    double r;
+-    unsigned int default_control = _controlfp(0, 0);
+-    _controlfp(_PC_64, _MCW_PC);
+-    r = pow(x, y);
+-    /* Restore setting */
+-    _controlfp(default_control, _MCW_PC);
+-    return r;
+-}
++double rb_w32_pow(double x, double y);
+ #endif
+ #if defined(__MINGW64_VERSION_MAJOR) || defined(__MINGW64__)
+ #define pow rb_w32_pow
+diff -Nru ruby-2.0.0-p645.orig/win32/win32.c ruby-2.0.0-p645/win32/win32.c
+--- ruby-2.0.0-p645.orig/win32/win32.c	2015-01-14 09:55:00.000000000 +0300
++++ ruby-2.0.0-p645/win32/win32.c	2017-01-18 12:14:59.031981065 +0300
+@@ -19,6 +19,8 @@
+   Copyright (C) 2000  Information-technology Promotion Agency, Japan
+  */
+ 
++#undef __STRICT_ANSI__
++
+ #include "ruby/ruby.h"
+ #include "ruby/encoding.h"
+ #include "dln.h"
+@@ -6736,3 +6738,21 @@
+     }
+     return _close(fd);
+ }
++
++#if !defined(__MINGW64__) && defined(__MINGW64_VERSION_MAJOR)
++/*
++ * Set floating point precision for pow() of mingw-w64 x86.
++ * With default precision the result is not proper on WinXP.
++ */
++double
++rb_w32_pow(double x, double y)
++{
++    double r;
++    unsigned int default_control = _controlfp(0, 0);
++    _controlfp(_PC_64, _MCW_PC);
++    r = pow(x, y);
++    /* Restore setting */
++    _controlfp(default_control, _MCW_PC);
++    return r;
++}
++#endif
