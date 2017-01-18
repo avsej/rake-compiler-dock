@@ -42,9 +42,13 @@ RUN sudo mkdir -p /usr/local/rake-compiler && \
 
 # Add cross compilers for Windows and Linux
 USER root
-RUN apt-get -y update && \
-    apt-get install -y gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 g++-mingw-w64-x86-64 g++-mingw-w64-i686 \
-        gcc-multilib moreutils
+RUN apt-get -y update && apt-get install -y gcc-multilib moreutils
+RUN curl -L http://downloads.sourceforge.net/mingw-w64/i686-w64-mingw32-gcc-4.7.2-release-linux64_rubenvb.tar.xz | \
+      tar -C /opt/ -Jx
+RUN curl -L http://downloads.sourceforge.net/mingw-w64/x86_64-w64-mingw32-gcc-4.7.2-release-linux64_rubenvb.tar.xz | \
+      tar -C /opt/ -Jx
+RUN echo "export PATH=\$PATH:/opt/mingw32/bin:/opt/mingw64/bin" | tee -a /etc/bash.bashrc /etc/rubybashrc
+
 USER rvm
 
 # Create dev tools i686-linux-gnu-*
@@ -87,8 +91,10 @@ RUN bash -c " \
     rm -rf ~/.rake-compiler/builds ~/.rake-compiler/sources && \
     find /usr/local/rvm -type d -print0 | sudo xargs -0 chmod g+sw "
 
+
 # Avoid linking against libruby shared object.
 # See also https://github.com/rake-compiler/rake-compiler-dock/issues/13
+
 RUN find /usr/local/rake-compiler/ruby/*linux*/ -name libruby.so | xargs rm
 RUN find /usr/local/rake-compiler/ruby/*linux*/ -name libruby-static.a | while read f ; do cp $f `echo $f | sed s/-static//` ; done
 RUN find /usr/local/rake-compiler/ruby/*linux*/ -name libruby.a | while read f ; do ar t $f | xargs ar d $f ; done
@@ -113,10 +119,10 @@ RUN sed -i -- "s:/root/.rake-compiler:/usr/local/rake-compiler:g" /usr/local/rak
 
 # # Install wrappers for strip commands as a workaround for "Protocol error" in boot2docker.
 COPY build/strip_wrapper /root/
-RUN mv /usr/bin/i686-w64-mingw32-strip /usr/bin/i686-w64-mingw32-strip.bin && \
-    mv /usr/bin/x86_64-w64-mingw32-strip /usr/bin/x86_64-w64-mingw32-strip.bin && \
-    ln /root/strip_wrapper /usr/bin/i686-w64-mingw32-strip && \
-    ln /root/strip_wrapper /usr/bin/x86_64-w64-mingw32-strip
+RUN mv /opt/mingw32/bin/i686-w64-mingw32-strip /opt/mingw32/bin/i686-w64-mingw32-strip.bin && \
+    mv /opt/mingw64/bin/x86_64-w64-mingw32-strip /opt/mingw64/bin/x86_64-w64-mingw32-strip.bin && \
+    ln /root/strip_wrapper /opt/mingw32/i686-w64-mingw32-strip && \
+    ln /root/strip_wrapper /opt/mingw64/x86_64-w64-mingw32-strip
 
 # Install SIGINT forwarder
 COPY build/sigfw.c /root/
